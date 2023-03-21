@@ -10,6 +10,10 @@ packages = [{include = "ai_lab"}]
 python = "^3.11"
 
 
+[tool.poetry.group.dev.dependencies]
+black = "^23.1.0"
+pylama = "^8.4.1"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
