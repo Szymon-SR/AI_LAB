@@ -6,7 +6,7 @@ import time
 from functools import cache
 
 from reversi_minimax.game import (draw_board, get_score_of_board,
-                                  get_valid_moves, make_move)
+                                  get_valid_moves, make_move, who_won)
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -58,7 +58,36 @@ def minimax(state, is_maximizing, alpha=-999, beta=999):
     return (max if is_maximizing else min)(scores)
 
 
-def best_move(state):
+def solve(state):
+    is_maximizing = True
+    no_of_rounds = 0
+
+    while get_valid_moves(state, MAX_MAP[is_maximizing]) != []:
+        logger.info(f"Round {no_of_rounds}")
+        move = generate_best_move(state, is_maximizing)
+        state = move[1]
+        is_maximizing = not is_maximizing
+        no_of_rounds += 1
+
+    draw_board(state)
+    logger.info(who_won(state))
+    logger.info(f"Number of rounds is {no_of_rounds}")
+
+
+def generate_best_move(state, is_maximizing):
+    if is_maximizing:
+        return max(
+            (minimax(new_state, is_maximizing=is_maximizing), new_state)
+            for new_state in possible_new_states(state, 1)
+        )
+    else:
+        return min(
+            (minimax(new_state, is_maximizing=is_maximizing), new_state)
+            for new_state in possible_new_states(state, 2)
+        )
+
+
+def best_move_for_max(state):
     return max(
         (minimax(new_state, is_maximizing=False), new_state)
         for new_state in possible_new_states(state, 2)
@@ -81,10 +110,7 @@ if __name__ == "__main__":
     logger.info("Result:")
 
     begin_run_time = time.time()
-    move = best_move(game_state)
+    result = solve(game_state)
     processing_time = time.time() - begin_run_time
 
-    logger.info(move[0])
-    draw_board(move[1])
     logger.info(f"Processing time - {processing_time}")
-    # @cache
