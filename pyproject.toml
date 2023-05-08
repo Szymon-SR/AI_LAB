@@ -7,7 +7,13 @@ readme = "README.md"
 packages = [{include = "ai_lab"}]
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = ">=3.11,<3.12"
+networkx = "^3.0"
+pandas = "^1.5.3"
+matplotlib = "^3.7.1"
+scipy = "^1.10.1"
+textual = "^0.23.0"
+termcolor = "^2.3.0"
 
 
 [tool.poetry.group.dev.dependencies]
