@@ -1,6 +1,6 @@
 import argparse
-import pickle
 import logging
+import pickle
 import time
 
 from reversi_minimax.game import draw_board

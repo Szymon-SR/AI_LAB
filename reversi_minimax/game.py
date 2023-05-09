@@ -8,6 +8,7 @@ from termcolor import colored
 
 BOARD_SIZE = 8
 
+
 def create_board():
     # Returns a board / game state
     board = []
@@ -23,20 +24,19 @@ def create_board():
 
 
 def who_won(state):
-    for row in state:
-        for item in row:
-            if item == 0:
-                return "Game is not finished"
-
     score = get_score_of_board(state)
     if score[1] > score[2]:
         return f"Player one won {score[1]} vs {score[2]}"
+    elif score[1] == score[2]:
+        return f"Game ended in a draw {score[1]} vs {score[2]}"
     else:
         return f"Player two won {score[2]} vs {score[1]}"
 
 
-
 def draw_board(board):
+    # print for purpose of generating test cases
+    print(colored(board, "red"))
+
     HLINE = "  ---------------------------------"
     VLINE = "  |   |   |   |   |   |   |   |   |"
 
