@@ -5,10 +5,10 @@ from reversi_minimax.game import get_score_of_board
 
 
 def fit_range(value):
-    if value > 1:
-        return 1
-    elif value < -1:
-        return -1
+    if value > 0.9:
+        return 0.9
+    elif value < -0.9:
+        return -0.9
     else:
         return value
 
@@ -46,6 +46,7 @@ def heur_corners(state):
     return num_of_corners * 0.25  # this way all 4 corners for max means 1,
     # and all 4 corners for min means -1, equal to total win
 
+
 def heur_avoid_corners(state):
     # benchmark, should be losing
 
@@ -65,9 +66,10 @@ def heur_avoid_corners(state):
     return -(num_of_corners * 0.25)  # this way all 4 corners for max means 1,
     # and all 4 corners for min means -1, equal to total win
 
+
 def heur_centralize(state):
     # gives preference to centrally positioned tiles
-    
+
     # this list stores the value of row/column, middle columns
     # such as 4, 5 are worth the most
     index_values = [0.1, 0.1, 0.2, 0.5, 0.5, 0.2, 0.1, 0.1]

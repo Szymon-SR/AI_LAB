@@ -4,9 +4,7 @@ import sys
 
 from termcolor import colored
 
-# X1 O2
-
-BOARD_SIZE = 8
+from reversi_minimax.constants import BOARD_SIZE
 
 
 def create_board():
@@ -23,7 +21,7 @@ def create_board():
     return board
 
 
-def who_won(state):
+def who_won(state: list):
     score = get_score_of_board(state)
     if score[1] > score[2]:
         return f"Player one won {score[1]} vs {score[2]}"
@@ -33,9 +31,9 @@ def who_won(state):
         return f"Player two won {score[2]} vs {score[1]}"
 
 
-def draw_board(board):
+def draw_board(state: list):
     # print for purpose of generating test cases
-    print(colored(board, "red"))
+    print(colored(state, "red"))
 
     HLINE = "  ---------------------------------"
     VLINE = "  |   |   |   |   |   |   |   |   |"
@@ -46,9 +44,9 @@ def draw_board(board):
         print(colored(VLINE, "green"))
         print(colored(y + 1, "green"), end=" ")
         for x in range(BOARD_SIZE):
-            to_print = board[x][y]
+            to_print = state[x][y]
 
-            if board[x][y] == 0:
+            if state[x][y] == 0:
                 to_print = " "
 
             print(colored("| %s" % (to_print), "green"), end=" ")
@@ -57,11 +55,11 @@ def draw_board(board):
         print(colored(HLINE, "green"))
 
 
-def is_valid_move(board, player_number, xstart, ystart):
-    if board[xstart][ystart] != 0 or not is_on_board(xstart, ystart):
+def is_valid_move(state: list, player_number: int, xstart: int, ystart: int):
+    if state[xstart][ystart] != 0 or not is_on_board(xstart, ystart):
         return False
 
-    board[xstart][ystart] = player_number  # temporarily set the tile on the board.
+    state[xstart][ystart] = player_number  # temporarily set the tile on the board.
 
     other_tile = 1 if player_number == 2 else 2
 
@@ -77,24 +75,23 @@ def is_valid_move(board, player_number, xstart, ystart):
         [-1, 1],
     ]:
         x, y = xstart, ystart
-        x += xdirection  # first step in the direction
-        y += ydirection  # first step in the direction
-        if is_on_board(x, y) and board[x][y] == other_tile:
-            # There is a piece belonging to the other player next to our piece.
+        x += xdirection
+        y += ydirection
+        if is_on_board(x, y) and state[x][y] == other_tile:
+            # Enemy piece
             x += xdirection
             y += ydirection
             if not is_on_board(x, y):
                 continue
-            while board[x][y] == other_tile:
+            while state[x][y] == other_tile:
                 x += xdirection
                 y += ydirection
                 if not is_on_board(x, y):
                     break
             if not is_on_board(x, y):
                 continue
-            if board[x][y] == player_number:
-                # There are pieces to flip over. Go in the reverse direction
-                # until we reach the original space, noting all the tiles along the way.
+            if state[x][y] == player_number:
+                # Check how many tiles can be taken
                 while True:
                     x -= xdirection
                     y -= ydirection
@@ -102,23 +99,24 @@ def is_valid_move(board, player_number, xstart, ystart):
                         break
                     tiles_to_flip.append([x, y])
 
-    board[xstart][ystart] = 0  # restore the empty space
-    if len(tiles_to_flip) == 0:  # If no tiles were flipped, this is not a valid move.
+    # Fix board
+    state[xstart][ystart] = 0
+    if len(tiles_to_flip) == 0:
+        # invalid
         return False
     return tiles_to_flip
 
 
-def is_on_board(x, y):
-    """Returns True if the coordinates are located on the board."""
+def is_on_board(x: int, y: int):
     return x >= 0 and x < BOARD_SIZE and y >= 0 and y < BOARD_SIZE
 
 
-def get_valid_moves(board, tile):
+def get_valid_moves(state: list, player_number: int):
     valid_moves = []
 
     for x in range(BOARD_SIZE):
         for y in range(BOARD_SIZE):
-            if is_valid_move(board, tile, x, y):
+            if is_valid_move(state, player_number, x, y):
                 valid_moves.append([x, y])
     # print(colored(tile, 'yellow'))
 
@@ -126,15 +124,14 @@ def get_valid_moves(board, tile):
     return valid_moves
 
 
-def get_score_of_board(board):
-    # Score on current state
+def get_score_of_board(state: list):
     player1_score = 0
     player2_score = 0
     for x in range(BOARD_SIZE):
         for y in range(BOARD_SIZE):
-            if board[x][y] == 1:
+            if state[x][y] == 1:
                 player1_score += 1
-            if board[x][y] == 2:
+            if state[x][y] == 2:
                 player2_score += 1
     return {1: player1_score, 2: player2_score}
 
@@ -142,10 +139,9 @@ def get_score_of_board(board):
 def enter_player_tile():
     tile = 0
     while not (int(tile) in (1, 2)):
-        print("Do you want to be 1 or 2?")
+        print("Pick 1 or 2")
         tile = input().upper()
 
-    # the first element in the list is the player's tile, the second is the computer's tile.
     if int(tile) == 1:
         return [1, 2]
     else:
@@ -153,25 +149,26 @@ def enter_player_tile():
 
 
 def who_goes_first():
+    # used for testing games
     if random.randint(0, 1) == 0:
         return "computer"
     else:
         return "player"
 
 
-def make_move(board, tile, xstart, ystart):
-    tiles_to_flip = is_valid_move(board, tile, xstart, ystart)
+def make_move(state: list, player_number: int, xstart: int, ystart: int):
+    tiles_to_flip = is_valid_move(state, player_number, xstart, ystart)
 
     if not tiles_to_flip:
         return False
 
-    board[xstart][ystart] = tile
+    state[xstart][ystart] = player_number
     for x, y in tiles_to_flip:
-        board[x][y] = tile
+        state[x][y] = player_number
     return True
 
 
-def is_on_corner(x, y):
+def is_on_corner(x: int, y: int):
     return (
         (x == 0 and y == 0)
         or (x == (BOARD_SIZE - 1) and y == 0)
@@ -180,7 +177,9 @@ def is_on_corner(x, y):
     )
 
 
-def get_player_move(board, player_tile):
+def get_player_move(state: list, player_number: int):
+    # used for testing games
+
     DIGITS1TO8 = "1 2 3 4 5 6 7 8".split()
     while True:
         print("Enter your move, or type quit to end the game")
@@ -191,7 +190,7 @@ def get_player_move(board, player_tile):
         if len(move) == 2 and move[0] in DIGITS1TO8 and move[1] in DIGITS1TO8:
             x = int(move[0]) - 1
             y = int(move[1]) - 1
-            if not is_valid_move(board, player_tile, x, y):
+            if not is_valid_move(state, player_number, x, y):
                 continue
             else:
                 break
@@ -204,33 +203,32 @@ def get_player_move(board, player_tile):
     return [x, y]
 
 
-def get_computer_move(board, computer_tile):
-    possible_moves = get_valid_moves(board, computer_tile)
+def get_computer_move(state: list, computer_number: int):
+    # simple computer (not minimax) to generate test cases
+    possible_moves = get_valid_moves(state, computer_number)
 
-    # randomize the order of the possible moves
     random.shuffle(possible_moves)
 
     for x, y in possible_moves:
         if is_on_corner(x, y):
             return [x, y]
 
-    # remember the best scoring move
     best_score = -1
     for x, y in possible_moves:
-        copied_board = copy.deepcopy(board)
-        make_move(copied_board, computer_tile, x, y)
-        score = get_score_of_board(copied_board)[computer_tile]
+        copied_board = copy.deepcopy(state)
+        make_move(copied_board, computer_number, x, y)
+        score = get_score_of_board(copied_board)[computer_number]
         if score > best_score:
             best_move = [x, y]
             best_score = score
     return best_move
 
 
-def show_points(player_tile, computer_tile):
+def show_points(player_number: int, computer_number: int):
     scores = get_score_of_board(main_board)
     print(
         "You have %s points. The computer has %s points."
-        % (scores[player_tile], scores[computer_tile])
+        % (scores[player_number], scores[computer_number])
     )
 
 
@@ -247,7 +245,6 @@ if __name__ == "__main__":
                 show_points(player_tile, computer_tile)
                 move = get_player_move(main_board, player_tile)
                 if move == "quit":
-                    print("Thanks for playing!")
                     sys.exit()
                 else:
                     make_move(main_board, player_tile, move[0], move[1])

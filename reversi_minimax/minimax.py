@@ -3,17 +3,20 @@ import copy
 import logging
 import pickle
 import time
-from functools import cache
 
-import reversi_minimax.heuristics as heur
 from reversi_minimax.constants import DEPTH_LIMIT, MAX_MAP
 from reversi_minimax.game import (draw_board, get_score_of_board,
                                   get_valid_moves, make_move, who_won)
+from reversi_minimax.reporting import (heuristic_values_in_order,
+                                       plot_game_history)
+from reversi_minimax.strategies import AI_PLAYERS, evaluate_by_strategy
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 # 1 max
+PLAYER1_STRATEGY = AI_PLAYERS["Edge and Corner"]
+PLAYER2_STRATEGY = AI_PLAYERS["Corner Priority"]
 
 
 def possible_new_states(state, cur_player_index):
@@ -28,7 +31,7 @@ def possible_new_states(state, cur_player_index):
     return possible_states
 
 
-def evaluate(state, is_maximizing, depth, heuristic):
+def evaluate(state, is_maximizing, depth):
     # return some value if either game is over, or depth limit reached
 
     if get_valid_moves(state, MAX_MAP[is_maximizing]) == []:
@@ -46,20 +49,20 @@ def evaluate(state, is_maximizing, depth, heuristic):
 
     if depth == 0:
         # depth limit was reached - return heuristic based score
-        logger.info("Depth limit reached, calculating heuristic")
-        return heuristic(state)
+        logger.debug("Depth limit reached, calculating heuristic")
+        if is_maximizing:
+            strat = PLAYER2_STRATEGY
+        else:
+            strat = PLAYER1_STRATEGY
+
+        result = evaluate_by_strategy(state, strat)
+        heuristic_values_in_order.append(result)
+        return result
 
 
 def minimax(state, is_maximizing, depth, alpha=-999, beta=999):
-
-    if is_maximizing:
-        # player two heur
-        if (score := evaluate(state, is_maximizing, depth, heur.heur_corners)) is not None:
-            return score
-    else:
-        # player one heur
-        if (score := evaluate(state, is_maximizing, depth, heur.heur_corners)) is not None:
-            return score
+    if (score := evaluate(state, is_maximizing, depth)) is not None:
+        return score
 
     scores = []
     for new_state in possible_new_states(state, MAX_MAP[is_maximizing]):
@@ -92,6 +95,8 @@ def solve(state):
     logger.info(who_won(state))
     logger.info(f"Number of rounds is {no_of_rounds}")
 
+    plot_game_history()
+
 
 def generate_best_move(state, is_maximizing):
     if is_maximizing:
@@ -104,13 +109,6 @@ def generate_best_move(state, is_maximizing):
             (minimax(new_state, is_maximizing, DEPTH_LIMIT), new_state)
             for new_state in possible_new_states(state, 2)
         )
-
-
-def best_move_for_max(state):
-    return max(
-        (minimax(new_state, False, DEPTH_LIMIT), new_state)
-        for new_state in possible_new_states(state, 2)
-    )
 
 
 if __name__ == "__main__":
